@@ -1,12 +1,60 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
+import React, { useEffect, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import LandingImage from '../assets/admin.webp'
 import ProjectCard from '../components/ProjectCard'
 import { Card } from 'react-bootstrap'
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { getHomeProjectsApi } from '../services/allAPI'
 
 
 
 function Home() {
+
+  //state for to hold the home projects
+  const [homeProjects, setHomeProjects] = useState([])
+
+  const navigate = useNavigate()
+  const [loginStatus, setLoginStatus] = useState(false)
+
+
+
+  useEffect(() => {
+    getHomeProjects()
+    if (sessionStorage.getItem("token")) {
+      setLoginStatus(true)
+    }
+    else {
+      setLoginStatus(false)
+    }
+  }, [])
+
+  const handleProjects = () => {
+    if (loginStatus) {
+      navigate('/projects')
+    }
+    else {
+      toast.warning("Please login to get full access to our projects!!!")
+    }
+  }
+  // console.log(homeProjects);
+
+  //function for get all projects
+  const getHomeProjects = async () => {
+    try {
+      const result = await getHomeProjectsApi()
+      if (result.status == 200) {
+        setHomeProjects(result.data)
+      }
+
+    }
+    catch (err) {
+      console.log(err);
+    }
+
+  }
+
+
   return (
     <>
       {/* Landing Page */}
@@ -19,7 +67,12 @@ function Home() {
                 To help you find a topic that can hold your interest, Developer Buddies has also developed the Topic Selection
                 Wizard. It will help you focus on an area of science that's best for you without having to read through every
                 project one by one!!!</p>
-              <Link to={'/login'} className='btn btn-warning'>starts To Explore <i className="fa-solid fa-arrow-right ms-1"></i> </Link>
+
+              {loginStatus ?
+                <Link to={'/dashboard'} className='btn btn-warning'>Manage Your Projects <i className="fa-solid fa-arrow-right ms-1"></i> </Link>
+
+                : <Link to={'/login'} className='btn btn-warning'>Starts To Explore <i className="fa-solid fa-arrow-right ms-1"></i> </Link>
+              }
 
             </div>
             <div className="col-lg-6">
@@ -34,12 +87,19 @@ function Home() {
         <h1 className='text-center mb-5'>Explore Our Projects</h1>
         <marquee>
           <div className="d-flex">
-            <div className='me-5 mb-5'>
-              <ProjectCard />
-            </div>
+
+            {
+              homeProjects?.length > 0 && homeProjects?.map(project => (
+                <div key={project} className='me-5 mb-5'>
+                  <ProjectCard displayData={project} />
+                </div>
+
+              ))
+            }
+
           </div>
         </marquee>
-        <button className='btn btn-link mt-3'>Click Here To View More Projects...</button>
+        <button onClick={handleProjects} className='btn btn-link mt-3'>Click Here To View More Projects...</button>
       </div>
 
       {/* testimony */}
@@ -116,6 +176,8 @@ function Home() {
           </Card>
         </div>
       </div>
+
+      <ToastContainer position='top-center' theme='colored' autoClose={2000} />
 
     </>
   )
